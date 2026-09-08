@@ -9,3 +9,7 @@
 .person dt,.neighbor p,.panel-top,.plot-caption,.plot-bottom>span,.insight,.status{font-size:12px}
 .empty-panel>p{font-size:15px}.person dl>div{grid-template-columns:80px 1fr}
 @media(max-width:720px){.legend-item{font-size:12px}.plot-bottom>span{font-size:10px}.person dl{grid-template-columns:1fr}}
+
+/* Official club logo, displayed in full without cropping. */
+.brand-logo{display:block;width:300px;max-width:100%;height:auto;border-radius:3px}
+@media(max-width:720px){.brand{max-width:100%}.brand-logo{width:250px}}

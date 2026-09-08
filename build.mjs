@@ -4,4 +4,5 @@ for(const [source,target] of [['build/three.module.js','three.module.js'],['buil
 await mkdir('dist',{recursive:true});
 for(const file of ['index.html','styles.css','app.js','scene.js','data.js','feed.js'])await copyFile(file,`dist/${file}`);
 await cp('vendor','dist/vendor',{recursive:true});
+await cp('assets','dist/assets',{recursive:true});
 console.log('Built static app in dist/ (including local Three.js).');

@@ -1,5 +1,5 @@
 // Paste your deployed Google Apps Script /exec URL here. Empty = demo mode.
-const DATA_ENDPOINT = "";
+const DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycbwKuQNO8ox7PN27oZwjC6eeA79l8BplfJ5QlTAMA-HmMBk-34-8jc1K6EI1dMT3DVqJ/exec";
 const POLL_INTERVAL = 5000;
 const REQUEST_TIMEOUT = 10000;
 
@@ -75,15 +75,13 @@ $('search').addEventListener('input',search);$('search').addEventListener('focus
 $('search').addEventListener('keydown',event=>{if(event.key==='ArrowDown'){event.preventDefault();$('search-results').querySelector('button')?.focus()}if(event.key==='Enter'){event.preventDefault();$('search-results').querySelector('button')?.click()}});
 $('search-results').addEventListener('keydown',event=>{const buttons=[...$('search-results').querySelectorAll('button')],index=buttons.indexOf(document.activeElement);if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();buttons[(index+(event.key==='ArrowDown'?1:buttons.length-1))%buttons.length]?.focus()}});
 addEventListener('pointerdown',event=>{if(!event.target.closest('.search-wrap')){$('search-results').hidden=true;$('search').setAttribute('aria-expanded','false')}});
-addEventListener('keydown',event=>{if(event.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)&&!$('how-dialog').open){event.preventDefault();$('search').focus()}if(event.key==='Escape'){$('search-results').hidden=true;$('search').setAttribute('aria-expanded','false');}});
+addEventListener('keydown',event=>{if(event.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){event.preventDefault();$('search').focus()}if(event.key==='Escape'){$('search-results').hidden=true;$('search').setAttribute('aria-expanded','false');}});
 $('color-by').onchange=()=>{colorBy=$('color-by').value;recolor()};
 $('reset').onclick=()=>scene?.reset();
 $('rotate').setAttribute('aria-pressed',String(!reduced));$('rotate').textContent=reduced?'▷':'Ⅱ';
 $('rotate').onclick=()=>{const rotating=scene?.toggleRotate();$('rotate').setAttribute('aria-pressed',String(rotating));$('rotate').textContent=rotating?'Ⅱ':'▷';$('rotate').title=$('rotate').ariaLabel=rotating?'Pause rotation':'Resume rotation'};
 $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.querySelector('.room').requestFullscreen()}catch{$('fullscreen').title='Fullscreen unavailable; use your browser’s fullscreen command.'}};
 if(!document.fullscreenEnabled)$('fullscreen').hidden=true;
-$('how-button').onclick=()=>$('how-dialog').showModal();$('close-how').onclick=$('got-it').onclick=()=>$('how-dialog').close();
-$('how-dialog').addEventListener('click',event=>{if(event.target===$('how-dialog')){const r=event.target.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)event.target.close()}});
 update(DEMO());setInterval(()=>{insightIndex++;renderInsight()},9000);if(DATA_ENDPOINT)poll();
 // Optional progressive enhancement: the same selection action, exposed to supported agents.
 if(document.modelContext?.registerTool){const lifecycle=new AbortController();addEventListener('pagehide',()=>lifecycle.abort(),{once:true});try{Promise.resolve(document.modelContext.registerTool({name:'select_attendee',description:'Select an attendee by exact name and display their original-vector nearest neighbors. Duplicate names require an occurrence number.',inputSchema:{type:'object',properties:{name:{type:'string'},occurrence:{type:'integer',minimum:1}},required:['name'],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:true},execute(input){if(!input||typeof input.name!=='string'||(input.occurrence!==undefined&&(!Number.isInteger(input.occurrence)||input.occurrence<1)))throw new Error('Provide a name and optional positive occurrence number.');const matches=people.filter(p=>p.name.toLowerCase()===input.name.toLowerCase());if(matches.length>1&&!input.occurrence)throw new Error('Multiple attendees have this name. Specify occurrence.');const p=matches[(input.occurrence||1)-1];if(!p)throw new Error('Attendee not found.');select(p.id);return {selected:p.name,neighbors:nearest(people,vectors,p.id).map(n=>({name:n.person.name,similarity:Math.round(n.score*100)}))};}},{signal:lifecycle.signal})).catch(()=>{});}catch{}}
