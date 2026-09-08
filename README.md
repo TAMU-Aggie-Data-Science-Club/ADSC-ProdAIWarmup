@@ -2,4 +2,4 @@
 
 A projector-friendly, interactive 3D warmup for the Aggie Data Science Club’s **AI in Production** workshop. 
 
-Click the deployment to view the page.
+[Check it out](tamu-aggie-data-science-club.github.io/ADSC-ProdAIWarmup/)
