@@ -1,6 +1,6 @@
 // Paste your deployed Google Apps Script /exec URL here. Empty = demo mode.
 const DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycbwKuQNO8ox7PN27oZwjC6eeA79l8BplfJ5QlTAMA-HmMBk-34-8jc1K6EI1dMT3DVqJ/exec";
-const POLL_INTERVAL = 5000;
+const POLL_INTERVAL = 2000; // Wait after each completed request; never overlap requests.
 const REQUEST_TIMEOUT = 10000;
 
 import {DEMO,OPTIONS,LABELS,featureVectors,nearest,reasons,project} from './data.js';
@@ -66,9 +66,11 @@ async function poll(){
  try{
   const snapshot=await fetchSnapshot(DATA_ENDPOINT,{lastGenerated,timeout:REQUEST_TIMEOUT});
   lastGenerated=snapshot.generated;isLive=true;update(snapshot.people);
+  $('plot-empty').querySelector('strong').textContent='The room is waiting for you.';
+  $('plot-empty').querySelector('p').textContent='Submit the form to add the first dot.';
   $('data-status').textContent='Live data';$('data-status').style.background='#e6f3ed';$('data-status').style.color='#38856c';
   $('sync-time').textContent=`Updated ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;$('warning').hidden=true;
- }catch(error){$('warning').textContent=isLive?'Couldn’t refresh the room. Showing the last successful live data; retrying automatically.':'Couldn’t connect to the form yet. Showing demo data; retrying automatically.';$('warning').hidden=false;$('data-status').textContent=isLive?'Live data · offline':'Demo data';$('sync-time').textContent='Connection interrupted';console.warn('Room refresh:',error.message);}
+ }catch(error){if(!isLive)update(DEMO());$('warning').textContent=isLive?'Couldn’t refresh the room. Showing the last successful live data; retrying automatically.':'Couldn’t connect to the form yet. Showing demo data; retrying automatically.';$('warning').hidden=false;$('data-status').textContent=isLive?'Live data · offline':'Demo data';$('sync-time').textContent='Connection interrupted';console.warn('Room refresh:',error.message);}
  finally{setTimeout(poll,POLL_INTERVAL);}
 }
 $('search').addEventListener('input',search);$('search').addEventListener('focus',search);
@@ -82,6 +84,18 @@ $('rotate').setAttribute('aria-pressed',String(!reduced));$('rotate').textConten
 $('rotate').onclick=()=>{const rotating=scene?.toggleRotate();$('rotate').setAttribute('aria-pressed',String(rotating));$('rotate').textContent=rotating?'Ⅱ':'▷';$('rotate').title=$('rotate').ariaLabel=rotating?'Pause rotation':'Resume rotation'};
 $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.querySelector('.room').requestFullscreen()}catch{$('fullscreen').title='Fullscreen unavailable; use your browser’s fullscreen command.'}};
 if(!document.fullscreenEnabled)$('fullscreen').hidden=true;
-update(DEMO());setInterval(()=>{insightIndex++;renderInsight()},9000);if(DATA_ENDPOINT)poll();
+if(DATA_ENDPOINT){
+ update([]);
+ $('data-status').textContent='Connecting…';
+ $('sync-time').textContent='Fetching form responses';
+ $('plot-empty').querySelector('strong').textContent='Connecting to the room…';
+ $('plot-empty').querySelector('p').textContent='Fetching the latest form responses.';
+ poll();
+}else{
+ update(DEMO());
+ $('data-status').textContent='Demo data';
+ $('sync-time').textContent='Make yourself at home.';
+}
+setInterval(()=>{insightIndex++;renderInsight()},9000);
 // Optional progressive enhancement: the same selection action, exposed to supported agents.
 if(document.modelContext?.registerTool){const lifecycle=new AbortController();addEventListener('pagehide',()=>lifecycle.abort(),{once:true});try{Promise.resolve(document.modelContext.registerTool({name:'select_attendee',description:'Select an attendee by exact name and display their original-vector nearest neighbors. Duplicate names require an occurrence number.',inputSchema:{type:'object',properties:{name:{type:'string'},occurrence:{type:'integer',minimum:1}},required:['name'],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:true},execute(input){if(!input||typeof input.name!=='string'||(input.occurrence!==undefined&&(!Number.isInteger(input.occurrence)||input.occurrence<1)))throw new Error('Provide a name and optional positive occurrence number.');const matches=people.filter(p=>p.name.toLowerCase()===input.name.toLowerCase());if(matches.length>1&&!input.occurrence)throw new Error('Multiple attendees have this name. Specify occurrence.');const p=matches[(input.occurrence||1)-1];if(!p)throw new Error('Attendee not found.');select(p.id);return {selected:p.name,neighbors:nearest(people,vectors,p.id).map(n=>({name:n.person.name,similarity:Math.round(n.score*100)}))};}},{signal:lifecycle.signal})).catch(()=>{});}catch{}}
